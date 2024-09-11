@@ -4,11 +4,11 @@ Scripts to aid with translating mediawiki content.
 
 The scripts in this repo are designed to fetch raw mediawiki content and then apply a series of text replacements using data from a "translation file". The result is saved locally for human review and submission.
 
-The provided scripts are written for PowerShell 7 and Python.
+The provided scripts are written for PowerShell and Python.
 
 On Unix-like systems you can symlink these into to `/usr/bin/local` without a file extension. Although not required, all sample commands in this README assume you've done this.
 
-On Windows systems you will probably need to specify the full path to the script, including the file extension. To run the PowerShell script you would also want to launch PowerShell first (`pwsh.exe` aka "PowerShell 7+" not `powershell.exe` aka "PowerShell 2"). Using PowerShell 2 would require a few minor changes.
+On Windows systems you will probably need to specify the full path to the script, including the file extension. To run the PowerShell script you would also want to launch PowerShell first.
 
 ## Usage
 
@@ -39,14 +39,18 @@ Résidentielle Carte Icôn
 
 ### Specifiers
 
-By default, the translations are case-sensitive, so a translation entry for `Deviation` will not be applied to "deviation". You can change this behavior by providing one or more "specifiers":
+By default, the translations are case-sensitive, so a translation entry for `Deviation` will not be applied to "deviation", it will only be applied to an exact match of `Devation` (upper-case `D`). 
+
+> **NOTE**: Specifiers are optional. It is better to not use them. They exist so that you can enter a transaltion _once_ and have the translation match multiple forms of text such as "exact match + lower case + title case". If you don't need this behavior you can avoid using any specifiers. The default behavior is equivalent to using a specifier of `:ex:`.
+
+You can change the default behavior by providing one or more "specifiers":
 
 ```txt
 :ex|lc|tc|uc:Deviation
 Anomalie
-:lc:Danger Zone Map Icon
+Danger Zone Map Icon
 Zone de Danger Carte Icôn
-Residential Map Icon
+:tc:Residential Map Icon
 Résidentielle Carte Icôn
 ```
 
@@ -63,7 +67,14 @@ The specifiers augment behavior as follows:
 
 Examples:
 
-| Specifier | Input | replacement |
+Consider the following translation entry:
+
+:ex|lc|tc|uc:Danger Zone Map Icon
+Zone de Danger Carte Icôn
+
+This results in the following match->replacement behavior:
+
+| Specifier | Matches | Replaced With |
 |-|-|-|
 | `ex` | Danger Zone Map Icon | Zone de Danger Carte Icôn |
 | `lc` | danger zone map icon | zone de danger carte icôn |

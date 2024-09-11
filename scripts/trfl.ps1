@@ -1,6 +1,11 @@
 #!/bin/pwsh
 $ErrorActionPreference = "Stop"
 
+if ([String]::IsNullOrWhiteSpace($args[0])) {
+    Write-Error "Missing required URL parameter, aborting."
+    return
+}
+
 if ($args[0].Contains("?")) {
     $uri = [System.Uri]$($args[0] + "&action=raw")
 } else {
@@ -9,7 +14,7 @@ if ($args[0].Contains("?")) {
 
 Write-Host "URI:`n`t$($uri)"
 
-$pathParts = $uri.AbsolutePath.Split('/')
+$pathParts = $uri.AbsolutePath.Split(@("/"))
 $articleName = $pathParts[$pathParts.Count - 1]
 $articleName = $articleName.Replace(":", "_")
 
@@ -19,7 +24,7 @@ if ($args.Count -gt 1) {
     if ([IO.File]::Exists("translations.txt")) {
         $translationFileName = "translations.txt"        
     } else {
-        $pathParts = $uri.AbsolutePath.Split('/')
+        $pathParts = $uri.AbsolutePath.Split(@("/"))
         $translationFileName = "$($articleName).txt"
     }
 }
@@ -40,7 +45,7 @@ $content = $response.Content
 $cito = (Get-Culture).TextInfo
 
 $translationsData = Get-Content -Path $translationFileName
-$translationsData = $translationsData.Split('`n')
+$translationsData = $translationsData.Replace("`r", "").Split(@("`n"))
 
 # for debugging/comparison
 # $content | Out-File -Force "$($outputFileName).tmp"
@@ -51,7 +56,7 @@ for ($i = 0; $i -lt $translationsData.Count; $i = $i + 2) {
     if ($input.StartsWith(":")) {
         $prefix = [Regex]::Match($input, "\:[(ex|lc|tc|uc)\|*]+\:").Value
         $input = $input.Replace($prefix, "")
-        $specifiers = $prefix.Split("|")
+        $specifiers = $prefix.Split(@("|"))
         foreach ($specifier in $specifiers) {
             $specifier = $specifier.Replace(":", "")
             switch ($specifier) {
