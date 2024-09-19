@@ -31,11 +31,15 @@ The translation files contain simple value pairs separated by new-lines.  Odd-nu
 ```txt
 Deviation
 Anomalie
+# this is a comment
 Danger Zone Map Icon
 Zone de Danger Carte Icôn
+
 Residential Map Icon
 Résidentielle Carte Icôn
 ```
+
+Blank lines and comment lines will be ignored, but they are only valid between translation pairs.
 
 ### Specifiers
 
