@@ -51,28 +51,43 @@ translationsData = translationsData.split('\n')
 
 __prefix_re = re.compile('\:[(ex|lc|tc|uc)\|*]+\:')
 
-for i in range(0, len(translationsData)-1, 2):
-    input = translationsData[i]
-    output = translationsData[i + 1]
-    if input.startswith(':'):
-        prefix = __prefix_re.findall(input)[0]
-        input = input.replace(prefix, '')
+original:str = None
+replacement:str = None
+for line in translationsData:
+    if line is None or len(line.rstrip()) == 0 or line[0] == '#':
+        # skip empty lines, or lines starting with `#` character.
+        # when these are encountered state is reset (expecting a new pair)
+        # this because the translation page on the FR wiki has blank lines
+        # and i want to make sure it works once they are done building it
+        original = None
+        replacement = None
+        continue
+    if original is None:
+        original = line
+        continue
+    if replacement is None:
+        replacement = line
+    if original.startswith(':'):
+        prefix = __prefix_re.findall(original)[0]
+        original = original.replace(prefix, '')
         specifiers = prefix.split('|')
         for specifier in specifiers:
             specifier = specifier.replace(':', '')
             match specifier:
                 case 'ex':
-                    content = content.replace(input, output)
+                    content = content.replace(original, replacement)
                 case 'lc':
-                    content = content.replace(input.lower(), output.lower())
+                    content = content.replace(original.lower(), replacement.lower())
                 case 'tc':
-                    tci = input.title()
-                    tco = output.title()
+                    tci = original.title()
+                    tco = replacement.title()
                     content = content.replace(tci, tco)
                 case 'uc':
-                    content = content.replace(input.upper(), output.upper())
+                    content = content.replace(original.upper(), replacement.upper())
     else:
-        content = content.replace(input, output)
+        content = content.replace(original, replacement)
+    original = None
+    replacement = None
 
 with io.open(outputFileName, 'wt') as file:
     file.write(content)

@@ -32,12 +32,12 @@ if ($args.Count -gt 1) {
 Write-Host "Translation File:`n`t$($translationFileName)"
 
 if ($args.Count -gt 2) {
-    $outputFileName = $args[2]
+    $replacementFileName = $args[2]
 } else {
-    $outputFileName = "$($articleName).wikitext"
+    $replacementFileName = "$($articleName).wikitext"
 }
 
-Write-Host "Output File:`n`t$($outputFileName)"
+Write-Host "Output File:`n`t$($replacementFileName)"
 
 $response = Invoke-WebRequest -URI $uri
 $content = $response.Content
@@ -48,37 +48,55 @@ $translationsData = Get-Content -Path $translationFileName
 $translationsData = $translationsData.Replace("`r", "").Split(@("`n"))
 
 # for debugging/comparison
-# $content | Out-File -Force "$($outputFileName).tmp"
+# $content | Out-File -Force "$($replacementFileName).tmp"
 
-for ($i = 0; $i -lt $translationsData.Count; $i = $i + 2) {
-    $input = $translationsData[$i]
-    $output = $translationsData[$i + 1]
-    if ($input.StartsWith(":")) {
-        $prefix = [Regex]::Match($input, "\:[(ex|lc|tc|uc)\|*]+\:").Value
-        $input = $input.Replace($prefix, "")
+$original = $null
+$replacement = $null
+foreach ($line in $translationsData) {
+    if ($null -eq $line -or $line.Length -eq 0 -or $line.StartsWith("#")) {
+        # skip empty lines, or lines starting with `#` character.
+        # when these are encountered state is reset (expecting a new pair)
+        # this because the translation page on the FR wiki has blank lines
+        # and i want to make sure it works once they are done building it
+        $original = $null
+        $replacement = $null
+        continue
+    }
+    if ($null -eq $original) {
+        $original = $line
+        continue
+    }
+    if ($null -eq $replacement) {
+        $replacement = $line
+    }
+    if ($original.StartsWith(":")) {
+        $prefix = [Regex]::Match($original, "\:[(ex|lc|tc|uc)\|*]+\:").Value
+        $original = $original.Replace($prefix, "")
         $specifiers = $prefix.Split(@("|"))
         foreach ($specifier in $specifiers) {
             $specifier = $specifier.Replace(":", "")
             switch ($specifier) {
                 "ex" {
-                    $content = $content.Replace($input, $output)
+                    $content = $content.Replace($original, $replacement)
                 }
                 "lc" {
-                    $content = $content.Replace($input.ToLower(), $output.ToLower())
+                    $content = $content.Replace($original.ToLower(), $replacement.ToLower())
                 }
                 "tc" {
-                    $tci = $cito.ToTitleCase($input)
-                    $tco = $cito.ToTitleCase($output)
+                    $tci = $cito.ToTitleCase($original)
+                    $tco = $cito.ToTitleCase($replacement)
                     $content = $content.Replace($tci, $tco)
                 }
                 "uc" {
-                    $content = $content.Replace($input.ToUpper(), $output.ToUpper())
+                    $content = $content.Replace($original.ToUpper(), $replacement.ToUpper())
                 }
             }
         }
     } else {
-        $content = $content.Replace($input, $output)
+        $content = $content.Replace($original, $replacement)
     }
+    $original = $null
+    $replacement = $null
 }
 
-$content | Out-File -Force $outputFileName
+$content | Out-File -Force $replacementFileName
